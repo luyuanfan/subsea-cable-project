@@ -54,6 +54,7 @@ if __name__ == '__main__':
         os.makedirs(args.out_dir, exist_ok=True)
 
     prev_label = None
+    G = None
     with gzip.open(args.in_path, 'rt', encoding='utf-8') as f:
         for line in tqdm(f):
             partial_dict = json.loads(line)
@@ -96,21 +97,23 @@ if __name__ == '__main__':
                                     asns = set())
                     if prev_str:
                         if not G.has_edge(prev_str, ip_addr):
-                            G.add_edge(prev_str, ip_addr, weight=1,
-                                       asns = set())
-                        else:
-                            G[prev_str][ip_addr]['weight'] += 1
-                            G.nodes[prev_str]['transit'] += 1
-                            G[prev_str][ip_addr]['asns'].update(inst['crosscn-asn'])
-                            G.nodes[prev_str]['asns'].update(inst['crosscn-asn'])
+                            G.add_edge(prev_str, ip_addr, weight=0, asns = set())
+                        
+                        G[prev_str][ip_addr]['weight'] += 1
+                        G.nodes[prev_str]['transit'] += 1
+                        G[prev_str][ip_addr]['asns'].update(inst['crosscn-asn'])
+                        G.nodes[prev_str]['asns'].update(inst['crosscn-asn'])
+
                     prev_str = ip_addr
-                G.nodes[prev_str]['transit'] += 1
-                G.nodes[prev_str]['asns'].update(inst['crosscn-asn'])
-        
-        if args.target == 'node':
-            process_current_node_graph(G, args.out_dir, label)
-        elif args.target == 'edge':
-            process_current_edge_graph(G, args.out_dir, label)
+
+                if prev_str:
+                    G.nodes[prev_str]['transit'] += 1
+                    G.nodes[prev_str]['asns'].update(inst['crosscn-asn'])
+        if G:
+            if args.target == 'node':
+                process_current_node_graph(G, args.out_dir, label)
+            elif args.target == 'edge':
+                process_current_edge_graph(G, args.out_dir, label)
 
         if args.out_format == 'json':
             with open(args.out_dir, 'w') as f:

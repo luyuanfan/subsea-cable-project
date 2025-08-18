@@ -45,10 +45,10 @@ def ewma(data_arr, win_size, lam_factor=0.2, control_limit=3, mu_0=None, dynamic
         'lcl_series': lcls,
     }
 
-def ewma_processor(input_dir, start, end, aggre=True, spec='25th',
-                   disp_iplink=False, iplink_input_dir=""):
+def ewma_processor(raw_data,subject='hop number', aggre=True, spec='25th',
+                   disp_iplink=False, iplink_data=None):
     
-    dates, dts, hop_data = parse_hopdata(input_dir, start, end, aggre, spec)
+    dates, dts, hop_data = parse_hopdata(raw_data, subject, aggre, spec)
     
     if disp_iplink:
         fig, axes = plt.subplots(2, 1, sharex=True, figsize=(15, 10))
@@ -58,9 +58,9 @@ def ewma_processor(input_dir, start, end, aggre=True, spec='25th',
     res = ewma(hop_data, 5 if aggre else 50)
     
     if aggre:
-        ax.plot(dts, hop_data, label='hop number', color='gray', marker='o', zorder=1)
+        ax.plot(dts, hop_data, label=subject, color='gray', marker='o', zorder=1)
     else:
-        ax.scatter(dts, hop_data, label='hop number', color='gray', marker='x', alpha=0.5, zorder=1)
+        ax.scatter(dts, hop_data, label=subject, color='gray', marker='x', alpha=0.5, zorder=1)
 
     ax.plot(dts, res['baseline'], color='green', label='baseline', linestyle=':', zorder=2)
     ax.plot(dts, res['ucl_series'], color='red', label='upper bound', linestyle=':', zorder=3)
@@ -88,7 +88,7 @@ def ewma_processor(input_dir, start, end, aggre=True, spec='25th',
     ax.legend()
 
     if disp_iplink:
-        stats, aggre = parse_iplink(iplink_input_dir, start, end)
+        stats, aggre = parse_iplink(iplink_data)
         render_topip(stats, aggre, axes[1])
         if res['pos_alerts']:
             pos_ids, pos_vals, _ = zip(*res['pos_alerts'])

@@ -14,7 +14,7 @@ def render_button(total_len):
 
 
 def savefig_button(fig, path_dir, img_name):
-    os.makedirs(f'images/{path_dir}', exist_ok=True)
-    path = f'images/{path_dir}/{img_name}'
+    os.makedirs(f'{path_dir}', exist_ok=True)
+    path = f'{path_dir}/{img_name}'
     if st.button('SAVE FIGURE'):
         fig.savefig(path)

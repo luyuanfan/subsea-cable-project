@@ -48,31 +48,3 @@ def heatmap_image_processor(data, start_time, end_time,
         ax2.tick_params(axis='x', rotation=90)
         plt.close(fig2)
     return (fig1, fig2) if fig1 else (fig2, fig1)
-
-if __name__ == '__main__':
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', type=str, required=True)
-    parser.add_argument('--threshold', type=int, default=40)
-    parser.add_argument('--mode', type=str, default='density')
-    parser.add_argument('--unit', type=str, default='ip')
-    parser.add_argument('--target', type=str, default='node')
-    parser.add_argument('--output_dir', type=str, required=True)
-    parser.add_argument('--start_time', type=str, default='xx')
-    parser.add_argument('--end_time', type=str, default='xx')
-    parser.add_argument('--contiguous', type=str, default='False')
-
-    args = parser.parse_args()
-    contiguous_flag = True if args.contiguous == 'True' else False
-    if contiguous_flag and (args.start_time == 'xx' or args.end_time == 'xx'):
-        print('expected contiguous dates but do not specify range')
-    output_prefix = f'({args.start_time})2({args.end_time})_{args.unit}'
-    if contiguous_flag:
-        output_prefix += '_contiguous'
-    
-    fig1, fig2 = heatmap_image_processor(args.input_dir, args.start_time, args.end_time, mode=args.mode, threshold=args.threshold, contiguous_flag=contiguous_flag)
-
-    if fig1:
-        fig1.savefig(f'{args.output_dir}/{output_prefix}_presence_heatmap_{args.target}.png')
-    if fig2:
-        fig2.savefig(f'{args.output_dir}/{output_prefix}_threshold_{args.threshold}_{args.target}_heatmap.png')

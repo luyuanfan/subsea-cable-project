@@ -33,10 +33,10 @@ def two_sided_glr_cusum(data, win_size, theta_min=0.5, h=2.0):
         # print('[s_n, x, theta_hat, test_stat]=', s_n, x, theta_hat, test_stat)
     return {'points': points, 'stats': stat_history, 'thetas': mle_thetas}
 
-def glr_cusum_processor(input_dir, start, end, aggre=True, spec='25th',
-                        disp_iplink=False, iplink_input_dir=""):
+def glr_cusum_processor(raw_data, subject='hop number', aggre=True, spec='25th',
+                        disp_iplink=False, iplink_data=None):
 
-    dates, dts, hop_data = parse_hopdata(input_dir, start, end, aggre, spec)
+    dates, dts, hop_data = parse_hopdata(raw_data, subject, aggre, spec)
     data = two_sided_glr_cusum(hop_data, 5 if aggre else 50)
     points = data['points']
 
@@ -47,16 +47,16 @@ def glr_cusum_processor(input_dir, start, end, aggre=True, spec='25th',
         fig, ax1 = plt.subplots(figsize=(15, 8))
 
     if aggre:
-        ax1.plot(dts, hop_data, label='hop number', color='gray', marker='o', zorder=1)
+        ax1.plot(dts, hop_data, label=subject, color='gray', marker='o', zorder=1)
     else:
-        ax1.scatter(dts, hop_data, label='hop number', color='gray', marker='x', alpha=0.5, zorder=1)
+        ax1.scatter(dts, hop_data, label=subject, color='gray', marker='x', alpha=0.5, zorder=1)
     
     ax1.scatter([dts[i[0]] for i in points], [hop_data[i[0]]  for i in points], color='red', zorder=3)
     if aggre:
         ret_dates = [dts[i[0]] for i in points]
     else:
         ret_dates = list(set([dts[i[0]].date() for i in points]))
-    ax1.set_ylabel('hop count')
+    ax1.set_ylabel(subject)
     ax1.legend(loc='upper left')
 
     if not disp_iplink:
@@ -71,7 +71,7 @@ def glr_cusum_processor(input_dir, start, end, aggre=True, spec='25th',
     ax2.legend(loc='upper right')
 
     if disp_iplink:
-        stats, aggre = parse_iplink(iplink_input_dir, start, end)
+        stats, aggre = parse_iplink(iplink_data)
         render_topip(stats, aggre, axes[1])
         
         for i in points:

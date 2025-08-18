@@ -8,6 +8,7 @@ if __name__ == '__main__':
     parser.add_argument('--geolite_geo_db', type=str, default='data/GeoLite2-City.mmdb')
     parser.add_argument('--geolite_asn_db', type=str, default='data/GeoLite2-ASN.mmdb')
     parser.add_argument('--ipinfo_db', type=str, default='data/ipinfo_lite.mmdb')
+    parser.add_argument('--itdk_db', type=str, default='data/itdk_formatted.mmdb')
     args = parser.parse_args()
     
     with mmdb.open_database(args.geolite_asn_db) as reader:
@@ -25,7 +26,6 @@ if __name__ == '__main__':
         city_data = reader.get(args.ip)
         geolite_city_name = city_data['city']['names']['en'] if city_data.get('city', None) else 'unknown'
         geolite_country_name = city_data['country']['names']['en'] if city_data.get('country', None) else 'unknown'
-        print(city_data['country'])
         geolite_continent_name = city_data['continent']['names']['en'] if city_data.get('continent', None) else 'unknown'
         geolite_subdivision_name = ', '.join(inst['names']['en'] for inst in city_data['subdivisions']) if city_data.get('subdivisions', None) else 'unknown'
         geolite_latitude = city_data['location']['latitude'] if city_data.get('location', None) else 'unknown'
@@ -39,6 +39,15 @@ if __name__ == '__main__':
         ipinfo_continent_name = ipinfo_data['continent'] if ipinfo_data.get('continent', None) else 'unknown'
         ipinfo_country_name = ipinfo_data['country'] if ipinfo_data.get('country', None) else 'unknown'
 
+    with mmdb.open_database(args.itdk_db) as reader:
+        itdk_data = reader.get(args.ip)
+        itdk_asn_number = itdk_data.get('asn', 'unknown') 
+        itdk_continent_name = itdk_data.get('continent', 'unknown')
+        itdk_country_name = itdk_data.get('country', 'unknown')
+        itdk_region_name = itdk_data.get('city', 'unknown')
+        itdk_latitude = itdk_data.get('latitude', 'unknown')
+        itdk_longitude = itdk_data.get('longitude', 'unknown')
+
     if args.query:
         queries = set([args.query])
     else:
@@ -50,7 +59,7 @@ if __name__ == '__main__':
             if geolite_network:
                 print('CIDR:', geolite_network, '(MaxMind)')
                 print('min ip:', geolite_network.network_address, ' max ip:', geolite_network.broadcast_address, '(MaxMind)')
-            print('asn:', geolite_asn_number, '(MaxMind),', ipinfo_asn_number, '(IpInfo)')
+            print('asn:', geolite_asn_number, '(MaxMind),', ipinfo_asn_number, '(IpInfo),', itdk_asn_number, '(ITDK)')
             print('asn name:', geolite_asn_name, '(MaxMind),', ipinfo_asn_name, '(IpInfo)')
             print('asn domain:', ipinfo_asn_domain, '(IpInfo)')
             print('')
@@ -60,11 +69,11 @@ if __name__ == '__main__':
     if 'where-is' in queries:
         try:
                 print('WHERE IS' , args.ip)
-                print('continent:', geolite_continent_name, '(MaxMind),', ipinfo_continent_name, '(IpInfo)')
-                print('country:', geolite_country_name, '(MaxMind),', ipinfo_country_name, '(IpInfo)')
-                print('city:', geolite_city_name, '(MaxMind)')
+                print('continent:', geolite_continent_name, '(MaxMind),', ipinfo_continent_name, '(IpInfo),', itdk_continent_name, '(ITDK)')
+                print('country:', geolite_country_name, '(MaxMind),', ipinfo_country_name, '(IpInfo),', itdk_country_name, '(ITDK)')
+                print('city:', geolite_city_name, '(MaxMind),', itdk_region_name, '(ITDK)')
                 print('subdivisions:', geolite_subdivision_name, '(MaxMind)')
-                print('(latitude, longitude):', geolite_latitude, geolite_longitude, '(MaxMind)')
+                print('(latitude, longitude):', geolite_latitude, geolite_longitude, '(MaxMind),', itdk_latitude, itdk_longitude, '(ITDK)')
                 print('')
         except Exception as e:
             print(f'received exception during query: {str(e)}')

@@ -20,11 +20,13 @@ if __name__ == '__main__':
                 dt = item['start-ts']
                 rtts = [i['rtt'] for i in item['hop-metas'][-3:]]
                 hop_num = item['stop-hop']
+                crosscn_asns = item['crosscn-asn']
 
                 data_aggre.append({
                     'datetime': dt,
                     'last-rtts': rtts,
-                    'hop-num' : hop_num
+                    'hop-num' : hop_num,
+                    'crosscn-asns': crosscn_asns
                 })
             
     sorted(data_aggre, key = lambda x : x['datetime'])

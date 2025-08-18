@@ -8,11 +8,10 @@ from queue import Queue
 # mmdb
 from netaddr import IPSet
 from mmdb_writer import MMDBWriter
-import maxminddb
 
 MAPPINGS = {
     'IP Address' : 'ip',
-    'Node' : 'node',
+#     'Node' : 'node',
     'ASN' : 'asn',
     'Continent': 'continent',
     'Country' : 'country',
@@ -20,8 +19,8 @@ MAPPINGS = {
     'City' : 'city',
     'Lat' : 'latitude',
     'Lon' : 'longitude',
-    'RTT' : 'rtt',
-    'VP' : 'vp'
+#     'RTT' : 'rtt',
+#     'VP' : 'vp'
 
 }
 NUM_PARSERS = 4
@@ -30,10 +29,17 @@ insert_queue = Queue(maxsize=10000)
 writer = MMDBWriter()
 line_counter, parse_counter, write_counter = 0, 0, 0
 counter_lock = threading.Lock()
+meta_cache = {}
+meta_cache_lock = threading.Lock()
 
 def process_line(row):
     ip =row['IP Address'].strip() + '/32'
-    return [ip], {v : row[k] for k, v in MAPPINGS.items() if k != 'IP Address' and row[k] is not None}
+    key = tuple((v, row[k]) for k, v in MAPPINGS.items() if k != 'IP Address' and row[k] is not None)
+    
+    with meta_cache_lock:
+        if key not in meta_cache:
+            meta_cache[key] = {k : val for k, val in key}
+    return [ip], meta_cache[key]
 
 def parse_worker():
     global parse_counter

@@ -10,10 +10,12 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--directory", type=str, default="/data/topology/ark/data/team-probing/list-7.allpref24/team-1/daily/2024")
+    parser.add_argument('--out_dir', type=str, default='data/aggre-data')
     parser.add_argument('--country_spec', type=str, required=True)
     parser.add_argument('--airport_spec', type=str, default=None)
     parser.add_argument('--probe_num_spec', type=int, default=None)
-    parser.add_argument('--start_time', type=str, default='202410')
+    parser.add_argument('--start_time', type=str, default='202401')
+    parser.add_argument('--end_time', type=str, default='202412')
     parser.add_argument('--threshold', type=int, default=15)
     args = parser.parse_args()
 
@@ -33,7 +35,7 @@ if __name__ == '__main__':
         per_month_dict.setdefault(cycle[6:12], [])
         per_month_dict[cycle[6:12]].append(cycle)
 
-    out_dir = 'data/new-meta/aggre-' + args.country_spec
+    out_dir = f'{args.out_dir}/{args.country_spec}'
     if args.airport_spec:
         out_dir += '-' + args.airport_spec
     if args.probe_num_spec:
@@ -55,6 +57,9 @@ if __name__ == '__main__':
             continue
         elif year_mon < args.start_time:
             print(f'{year_mon} is before expected start time {args.start_time}. skipping')
+            continue
+        elif year_mon > args.end_time:
+            print(f'{year_mon} is after expected end time {args.end_time}. skipping')
             continue
         print(f'available data on {year_mon}: {len(cycles)}')
         with gzip.open(os.path.join(out_dir, f'{year_mon}.jsonl.gz'), 'wt', encoding='utf-8') as f:

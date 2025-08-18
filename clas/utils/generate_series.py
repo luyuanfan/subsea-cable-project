@@ -1,44 +1,32 @@
-import json
+import json, statistics
 import numpy as np
 from datetime import datetime
 
-def parse_hopdata(input_dir, start, end, aggre, spec):
-    start_dt = datetime.combine(start, datetime.min.time()).replace(tzinfo=None)
-    end_dt = datetime.combine(end, datetime.min.time()).replace(tzinfo=None)
+def parse_hopdata(raw_data, subject, aggre, spec):
+
+    raw_data = sorted(raw_data, key=lambda x : datetime.fromisoformat(x['datetime']))
+    dts, stats_data = [], []
     dates = set()
- 
-    with open(input_dir, 'r') as f:
-        data = json.load(f)
-    data = sorted(data, key=lambda x : datetime.fromisoformat(x['datetime']))
-    dts, hop_data = [], []
 
     if not aggre:
-        for item in data:
+        for item in raw_data:
             dt = datetime.fromisoformat(item['datetime']).replace(tzinfo=None)
-            if dt < start_dt:
-                continue
-            if dt > end_dt:
-                break
             dts.append(dt)
             dates.add(dt.date())
-            hop_data.append(item['hop-num'])
+            stats_data.append(item['hop-num'] if subject == 'hop number' else statistics.mean(item['last-rtts']))
 
-        return list(dates), dts, hop_data
+        return list(dates), dts, stats_data
     
     buf = []
-    for item in data:
+    for i, item in enumerate(raw_data):
         dt = datetime.fromisoformat(item['datetime']).replace(tzinfo=None)
-        if dt < start_dt:
-            continue
-        if dt > end_dt:
-            break
         dt = dt.date()
         dates.add(dt)
         if len(dts) == 0:
             dts.append(dt)
-            buf.append(item['hop-num'])
+            buf.append(item['hop-num'] if subject == 'hop number' else statistics.mean(item['last-rtts']))
         elif dt == dts[-1]:
-            buf.append(item['hop-num'])
+            buf.append(item['hop-num'] if subject == 'hop number' else statistics.mean(item['last-rtts']))
         else:
             if len(buf) == 0:
                 dts[-1] = dt
@@ -48,65 +36,55 @@ def parse_hopdata(input_dir, start, end, aggre, spec):
             buf_arr = np.array(buf)
             
             if spec == 'min':
-                hop_data.append(min(buf))
+                stats_data.append(min(buf))
             elif spec == 'max':
-                hop_data.append(max(buf))
+                stats_data.append(max(buf))
             elif spec == 'avg':
-                hop_data.append(int(np.mean(buf_arr)))
+                stats_data.append(int(np.mean(buf_arr)))
             else:
                 q25, q50, q75 = np.percentile(buf_arr, [25, 50, 75])
 
                 if spec == 'q25':
-                    hop_data.append(int(q25))
+                    stats_data.append(int(q25))
                 elif spec == 'q75':
-                    hop_data.append(int(q75))
+                    stats_data.append(int(q75))
                 elif spec == 'med':
-                    hop_data.append(int(q50))
+                    stats_data.append(int(q50))
                 else:
                     raise Exception('unimplemented statistics')
-            buf = []
+            buf = [item['hop-num']]
 
     if len(buf) > 0:
         buf_arr = np.array(buf)
         
         if spec == 'min':
-            hop_data.append(min(buf))
+            stats_data.append(min(buf))
         elif spec == 'max':
-            hop_data.append(max(buf))
+            stats_data.append(max(buf))
         elif spec == 'avg':
-            hop_data.append(int(np.mean(buf_arr)))
+            stats_data.append(int(np.mean(buf_arr)))
         else:
             q25, q50, q75 = np.percentile(buf_arr, [25, 50, 75])
 
             if spec == 'q25':
-                hop_data.append(int(q25))
+                stats_data.append(int(q25))
             elif spec == 'q75':
-                hop_data.append(int(q75))
+                stats_data.append(int(q75))
             elif spec == 'med':
-                hop_data.append(int(q50))
+                stats_data.append(int(q50))
             else:
                 raise Exception('unimplemented statistics')
 
-    return sorted(list(dates)), dts, hop_data
+    return sorted(list(dates)), dts, stats_data
 
 
-def parse_iplink(input_dir, start, end, 
-                mode='top_k', top_r=5, top_k=5):
-    start_dt = datetime.combine(start, datetime.min.time()).replace(tzinfo=None)
-    end_dt = datetime.combine(end, datetime.min.time()).replace(tzinfo=None)
-
-    with open(input_dir, 'r') as f:
-       data = json.load(f)
+def parse_iplink(raw_data, mode='top_k', top_r=5, top_k=5):
     
     stats, aggre = {}, set()
     counter = {}
 
-    for k, v in data.items():
+    for k, v in raw_data.items():
         dt = datetime.strptime(k, '%y-%m-%d').replace(tzinfo=None)
-        if dt < start_dt:
-            continue
-        if dt > end_dt:
-            break
         for item in v:
             stats.setdefault(item['node'], {})
             stats[item['node']][dt] = item['count']
@@ -122,6 +100,7 @@ def parse_iplink(input_dir, start, end,
             aggre.add(item['node'])
             counter[item['node']] = counter.get(item['node'], 0) + item['count']
 
-    aggre = sorted(list(aggre), key=lambda x : counter.get(x, 0), reverse=True)
+    aggre = [inst for inst in list(aggre) if counter.get(inst, 0) > 5]
+    aggre = sorted(list(aggre), key=lambda x : counter[x], reverse=True)
 
     return stats, aggre

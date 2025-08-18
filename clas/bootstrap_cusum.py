@@ -26,10 +26,10 @@ def bootstrap_cusum(dist_arr, num_bootstrap = 500):
             num_g += 1
     return (num_g / num_bootstrap, shifts)
 
-def bootstrap_cusum_processor(input_dir, start, end, aggre=False, spec='25th',
-                              disp_iplink=False, iplink_input_dir=""):
+def bootstrap_cusum_processor(raw_data, subject='hop number', aggre=False, spec='25th',
+                              disp_iplink=False, iplink_data=None):
     
-    dates, dts, hop_data = parse_hopdata(input_dir, start, end, aggre, spec)
+    dates, dts, hop_data = parse_hopdata(raw_data, subject, aggre, spec)
     
     if disp_iplink:
         fig, axes = plt.subplots(2, 1, sharex=True, figsize=(15, 10))
@@ -38,9 +38,9 @@ def bootstrap_cusum_processor(input_dir, start, end, aggre=False, spec='25th',
         fig, ax = plt.subplots(figsize=(15, 8))
 
     if aggre:
-        ax.plot(dts, hop_data, marker='o', zorder=1)
+        ax.plot(dts, hop_data, marker='o', zorder=1, color='gray')
     else:
-        ax.scatter(dts, hop_data, marker='x', alpha=0.5, zorder=1)
+        ax.scatter(dts, hop_data, marker='x', alpha=0.5, zorder=1, color='gray')
     pval, shifts = bootstrap_cusum(hop_data)
     ret_dates = set()
     if pval < 0.05:
@@ -55,11 +55,11 @@ def bootstrap_cusum_processor(input_dir, start, end, aggre=False, spec='25th',
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
         plt.setp(ax.get_xticklabels(), rotation=90, ha='right')
  
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Value')
+    ax.set_xlabel('time')
+    ax.set_ylabel(subject)
     
     if disp_iplink:
-        stats, aggre = parse_iplink(iplink_input_dir, start, end)
+        stats, aggre = parse_iplink(iplink_data)
         render_topip(stats, aggre, axes[1])
 
         for i in shifts:
