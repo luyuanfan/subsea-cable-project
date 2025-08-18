@@ -1,6 +1,6 @@
 ## File structure
 ```plaintext
--> per_dest_pipeline.py 
+-> prepared_metadata_pipeline.py 
 
 -> data/ [git ignored]
 
@@ -10,6 +10,7 @@
    -> __init__.py
    -> preliminary_visual.py
    -> route_presence_visual.py
+   -> hop_graph_visual.py
    -> crosscn_asn_visual.py
 
 -> proc/
@@ -24,67 +25,100 @@
    -> ip_checker.py
 
 -> remote/ [responsible for processing raw data on ssh remote server]
-   -> gen_meta.py
-   -> read_data.py
+   -> aggregate_itdk_jsonl.py
+   -> aggregate_raw_measurement.py
    -> parser.py
    -> errors.py
    -> utils.py
 
 -> clas
-   -> evaluate_distribution_shift.py
-   -> evaluate_matrix_diff.py
-
--> utils
-   -> data_processing.py
+   -> bootstrap_cusum.py
+   -> cusum.py
+   -> ewma.py
+   -> glr_cusum.py
 
 -> requirements.txt
 ```
 
-## Getting Started
-1. create virtual environment
-2. pip install all libraries in **requirements.txt**
-3. For a simple start, execute
+## Extract Traceroute Data from Ark
+To obtain vantage points of interest from raw data, use
 ```
-python per_dest_pipeline.py --vp '[vantage point identifier]' --dst '[destination country] --prelim --node --edge --graph --crosscn_edge'
+python remote/aggregate_raw_measurement.py --country_spec [cn name]
 ```
-e.g.
-```
-python per_dest_pipeline.py --vp 'Kenya' --dst 'South Africa' --prelim --node --edge --graph --crosscn_edge
-```
-4. To obtain a selected period of time, especially if expecting the measurement duration to be contiguous (that means, a day in the middle with no measurement data suggest an actual network breakage), use
-```
-python per_dest_pipeline.py --vp '[vantage point identifier]' --dst '[destination country] --prelim --node --edge --graph --crosscn_edge --start [start time] --end [end-time]'
-```
-Both 'start' and 'end' arguments are given as *[2-digit year number]-[2-digit month number]-[2-digit day number]*, e.g.
-```
-python per_dest_pipeline.py --vp 'Kenya' --dst 'South Africa' --prelim --node --edge --graph --crosscn_edge --start 24-02-01 --end 24-03-30
-```
-## Script Spec
+the script also supports additional specifications on airport (via *--airport_spec*) and identifiers (via *--probe_num_spec*, use '-1' to default to the vp with no identifier).
 
-### per_dest_pipeline.py
-**dependencies**
-- None
+For example, France has Ark vantage points cdg3-fr and cdg-fr, they can be separately extracted via 
+```
+python remote/aggregate_raw_measurement.py --country_spec fr --airport_spec cdg --probe_num_spec 3
+```
+and 
+```
+python remote/aggregate_raw_measurement.py --country_spec fr --airport_spec cdg --probe_num_spec -1
+```
+Meanwhile, Germany has vantage points muc-de and agb-de, they are be extracted as *'--airport_spec muc'* and *'--airport_spec agb'*. 
 
-**accepted arguments**
-- `--vp` [*required*] the identifier for probe data used (currently only accepts 'Kenya')
-- `--dst` [*required*] the full name of the probe destination country of interest
-- `--node_thres` [*default=40*] the number of row on the visual graph demonstrating per-IP utilization heatmap
-- `--edge_thres` [*default=40*] the number of row on the visual graph demonstrating per IP link tuple utilization heatmap
-- `--graph_thres` [*default=10*] the lower bound on the utilization count IP link tuple (per day) to be visualized on graph
-- `--start` [*default='xx'*] specification on the expected start time of the measurement. written in form '[2-digit year]-[2-digit month]-[2-digit day]'
-- `--end` [*default='xx'*] specification on the expected end time of the measurement, same format as start argument
-- `--prelim` [*action='store_true'*] if specified, will run script 'vis/preliminary_visual.py'. Outputs images on overall network hop number, round-trip time and stop reason statistics
-- `--edge` [*action='store_true'*] if specified, will run script 'proc/traceroute_graph.py' and 'vis/route_presence_visual.py'. Outputs images on per-day heatmap of IP-link (i.e. edge of the IP-connected network graph) utilization presence and density 
-- `--node` [*action='store_true'*] if specified, will run script 'proc/traceroute_graph.py' and 'vis/route_presence_visual.py'. Outputs images on per-day heatmap of IP (i.e. node of the IP-connected network graph) utilization presence and density
-- `--graph` [*action='store_true'*] if specified, will run script 'proc/traceroute_graph.py'. Output per-day directed graph on IP link information obtained from per-hop IP traceroute data
-- `--crosscn_edge` [*action='store_true'*] if specified, will run script 'proc/traceroute_crosscn.py' and 'vis/route_presence_visual.py'. Outputs images on per-day cross-country IP-link utilization presence and density
-- `--contiguous` [*action='store_true'*] if specified, suggests that the period expects contiguous data from each day. Any day without measurement data is indicative of network disconnections
+If not airport and probe num is specified, the data extraction script will aggregate on all available vantage points.
 
-**outputs**
-- 'images/[*argument vp*]2[*argument dst*]' folder, including all visualizations
+## Prepare Data
+For a specific incident of interest, put all aggregated vp of interest in the same folder and run
+```
+python per_dest_pipeline.py --root_dir [the root directory for data] --data_dir [directory name for raw data]  --stats_dir [directory used to place all outputs stats files]
+```
+For example, to study the massive red sea outage, we would want vantage points *ke, za, gh, cdg-fr*. We will format the data directory as:
+```
+-> data/
+   -> buf/
+      -> ke/
+      -> za/
+      -> gh/
+      -> cdg-fr/
 
+   -> redsea-stats/
+```
+Then to obtain all pre-computed statistical data, run
+```
+python per_dest_pipeline.py --root_dir data --data_dir buf  --stats_dir redsea-stats
+```
+After the scripts completes, the buf directory will remain unchanged and you will see additional directories now inside the stats_dir:
+```
+-> data/
+   -> buf/ [unchanged]
+      -> ke/
+      -> za/
+      -> gh/
+      -> cdg-fr/
 
+   -> redsea-stats/
+      --> probe-filter/
+      --> outputs/
+      --> graphs/
+      --> asn-dist/
+      --> prelim/
+```
+These new statistics data can be used to further processing or visualizations
 
+## Visualize Data
+The current approach for data analytics and visualization uses Streamlit library. 
+
+To tell the system where the statistics data are stored, modify the path information in **web/utils/constants.py*. Specifically, do
+```
+ROOT_DIR = [change to the directory specified when in preparation step's 'root_dir' argument]
+CATEGORY = [change to the directory specified when in preparation step's 'stats_dir' argument]
+```
+
+Also, to specify which vantage points of interest, add **cn_specs.txt** inside the stats_dir. It will be a txt file where each line contains a vp of interest. For the redsea example, the txt file would look like:
+```
+ke
+za
+gh
+cdg-fr
+```
+
+To start the port, run
+```
+streamlit run web/starter.py
+```
+*Note: if you are on a remote server, this requires the remote server to be listening from localhost port 8501. To ensure this add '-L 8501:localhost:8501' when connecting to ssh remote server*
 
 
 
