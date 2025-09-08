@@ -1,6 +1,6 @@
 ## File structure
 ```plaintext
--> prepared_metadata_pipeline.py 
+-> prepare_metadata_pipeline.py 
 
 -> data/ [git ignored]
 
@@ -62,7 +62,7 @@ If not airport and probe num is specified, the data extraction script will aggre
 ## Prepare Data
 For a specific incident of interest, put all aggregated vp of interest in the same folder and run
 ```
-python per_dest_pipeline.py --root_dir [the root directory for data] --data_dir [directory name for raw data]  --stats_dir [directory used to place all outputs stats files]
+python prepare_metadata_pipeline.py --root_dir [the root directory for data] --data_dir [directory name for raw data]  --stats_dir [directory used to place all outputs stats files]
 ```
 For example, to study the massive red sea outage, we would want vantage points *ke, za, gh, cdg-fr*. We will format the data directory as:
 ```
@@ -77,7 +77,7 @@ For example, to study the massive red sea outage, we would want vantage points *
 ```
 Then to obtain all pre-computed statistical data, run
 ```
-python per_dest_pipeline.py --root_dir data --data_dir buf  --stats_dir redsea-stats
+python prepare_metadata_pipeline.py --root_dir data --data_dir buf  --stats_dir redsea-stats
 ```
 After the scripts completes, the buf directory will remain unchanged and you will see additional directories now inside the stats_dir:
 ```

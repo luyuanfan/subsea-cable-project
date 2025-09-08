@@ -1,0 +1,4 @@
+data/*
+.venv
+images/
+!data/iso-3166-countries-with-regional-codes.csv
