@@ -120,12 +120,9 @@ streamlit run web/starter.py
 ```
 *Note: if you are on a remote server, this requires the remote server to be listening from localhost port 8501. To ensure this add '-L 8501:localhost:8501' when connecting to ssh remote server*
 
-
-
-
-
-
-
+## Database Dependencies
+Download ['IPinfo Lite database'](https://ipinfo.io/dashboard/downloads) to `data/ipinfo_lite.mmdb`.
+Download [ISO 3166 Countries with Regional Codes](https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv) to `data/iso-3166-countries-with-regional-codes.csv`. 
 
 
 
