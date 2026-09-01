@@ -1,5 +1,6 @@
 data/*
 .venv
+*scamper*
 images/*
 #!data/iso-3166-countries-with-regional-codes.csv
 # TODO: find them?
