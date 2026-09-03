@@ -141,5 +141,3 @@ Download ['IPinfo Lite database'](https://ipinfo.io/dashboard/downloads) to `dat
 Download [ISO 3166 Countries with Regional Codes](https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv) to `data/iso-3166-countries-with-regional-codes.csv`. 
 
 
-
-
