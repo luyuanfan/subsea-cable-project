@@ -43,6 +43,7 @@
 ## Setup
 
 ```bash
+sudo add-apt-repository ppa:matthewluckie/scamper
 sudo apt-get install scamper python3-scamper scamper-utils scamper-remoted scamper-hoiho libscamperfile13 libscamperfile13-dev libscamperctrl4 libscamperctrl4-dev
 python3 -m venv .venv --system-site-packages
 source .venv/bin/activate
