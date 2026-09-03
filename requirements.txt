@@ -10,3 +10,6 @@ maxminddb
 scipy
 streamlit
 mmdb_writer
+PySide6
+PySide6-Essentials
+PySide6-Addons
