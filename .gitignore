@@ -1,9 +1,8 @@
 data/*
 .venv
 images/*
-#!data/iso-3166-countries-with-regional-codes.csv
-# TODO: find them?
-#!data/ipinfo_lite.mmdb
+!data/iso-3166-countries-with-regional-codes.csv
+!data/ipinfo_lite.mmdb
 # !data/GeoLite2-Country.mmdb
 # !data/GeoLite2-ASN.mmdb
 # !data/GeoLite2-City.mmdb
