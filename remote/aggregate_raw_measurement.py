@@ -1,5 +1,5 @@
 """
-All Ark data must be present in ARK_DIR.
+All Ark probing data must already be present in ARK_DIR.
 
 ARK_DIR has cycle directories looking like: 
     cycle-2024021/  cycle-20240303/  cycle-20240320/
@@ -8,6 +8,7 @@ Each cycle directory has the files looking like:
     abz2-uk.team-probing.c011242.20240130.warts.gz
     eug-us.team-probing.c011242.20240130.warts.gz
     ory4-fr.team-probing.c011244.20240130.warts.gz
+<airport_name><optional_probe_num>-<iso_code>.team-probing.*.warts.gz
 
 This program:
 (1) Looks through all file names in ARK_DIR;
@@ -23,6 +24,7 @@ import argparse
 import gzip
 import json
 import logging
+from collections import defaultdict
 
 from parser import WartsDumpParser
 
@@ -34,18 +36,21 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-def cycle_date(name: str):
+def search_date(fname):
     """
-    cycle-20240101" -> "20240101";
-    None if the name has no date.
+    Search for YYYYMMDD in a filename, return date. 
+    'cycle-20240101' -> '20240101'
     """
-    m = _DATE.search(name)
+    m = _DATE.search(fname)
     return m.group() if m else None
 
 
-def out_name(country, airport, probe_num):
+def build_vp_name(country, airport, probe_num):
     """
+    Build output filename based on (country, airport, probe_num) spec.
+    ('gh') -> 'gh' 
     ('de', 'muc', -1) -> 'de-muc--1'
+    ('fr', 'cdg', 3) -> 'fr-cdg-3'
     """
     parts = [country]
     if airport:
@@ -55,40 +60,45 @@ def out_name(country, airport, probe_num):
     return "-".join(parts)
 
 
-def build_label(country, airport, probe_num):
+def build_regex_label(country, airport, probe_num):
     """
-    Search for pattern like:
-        abz*-uk.team-probing
+    Build regex pattern based on (country, airport, probe_num) spec, such as:
+        abz1-uk.team-probing
+        abz-uk.team-probing
         uk.team-probing
+    Return regex object. 
+
+    When probe_num is not provided or is -1, regex matches for every probe_num within
+    that airport.
     """
     if not airport:
         return re.compile(rf"{country}\.team-probing")
-    elif airport and not probe_num:
-        return re.compile(rf"{airport}\d*-{country}\.team-probing")
-    elif airport and probe_num:
-        num = "" if probe_num == -1 else probe_num
-        return re.compile(rf"{airport}{num}-{country}\.team-probing")
+    else:
+        if (not probe_num) or (probe_num == -1):
+            return re.compile(rf"{airport}\d*-{country}\.team-probing")
+        else:
+            return re.compile(rf"{airport}{probe_num}-{country}\.team-probing")
 
 
-def cycles_by_month(directory, start, end):
+def sort_cycle_by_ym(data_dir, start, end):
     """
     Produce a dictionary in the following structure: 
     {
         (202401) -> [20240101, 20240115, 20240131]
         (202411) -> [20241101, 20241115]
     }
-    Key (year, month) ascends. 
+    Key YYYYMM ascends chronologically, 
     """
-    names = [
-        n for n in os.listdir(directory)
-        if cycle_date(n) and os.path.isdir(os.path.join(directory, n))
+    cycle_names = [
+        n for n in os.listdir(data_dir)
+        if search_date(n) and os.path.isdir(os.path.join(data_dir, n))
     ]
     months = defaultdict(list)
-    for name in sorted(names, key=cycle_date):
-        ym = cycle_date(name)[:6]
+    for name in sorted(cycle_names, key=search_date):
+        ym = search_date(name)[:6]
         if start <= ym <= end:
             months[ym].append(name)
-    return dict(month)
+    return dict(months)
     
 
 def main():
@@ -106,42 +116,46 @@ def main():
     if not os.path.exists(args.in_dir):
         logger.debug(f"Input directory: [{args.in_dir}] does not exist.")
         sys.exit(1)
-    if args.airport_spec and not args.probe_num_spec:
-        logger.debug(f"Airport specified but not probe number.")
+    if args.probe_num_spec and not args.airport_spec:
+        logger.debug(f"Airport specified but no probe number provided. Exiting...")
         sys.exit(1)
 
-    label = build_label(args.country_spec, args.airport_spec, args.probe_num_spec)
-    vp_name = out_name(args.country_spec, args.airport_spec, args.probe_num_spec)
+    label = build_regex_label(args.country_spec, args.airport_spec, args.probe_num_spec)
+    vp_name = build_vp_name(args.country_spec, args.airport_spec, args.probe_num_spec)
     out_dir = os.path.join(args.out_dir, vp_name)
 
-    for ym, cycles in cycles_by_month(args.in_dir, args.start_time, args.end_time).items():
+    for ym, cycles in sort_cycle_by_ym(args.in_dir, args.start_time, args.end_time).items():
         if len(cycles) < args.threshold:
-            print(f"{ym} has only {len(cycles)} cycles (minimum {args.threshold}. Skipping...")
+            print(f"{ym} {vp_name} has only {len(cycles)} cycles (minimum {args.threshold}. Skipping...")
             continue
 
-        out_path = os.path.join(out_dir, f"{ym}.jsonl.gz")
-        if os.path.exists(out_path):
-            print(f"{out_path} already exists. Skipping...")
+        fout_path = os.path.join(out_dir, f"{ym}.jsonl.gz")
+        if os.path.exists(fout_path):
+            print(f"{fout_path} already exists. Skipping...")
             continue
 
-        jobs = [(c, inst) for c in cycles
-                for inst in sorted(os.listdir(os.path.join(args.in_dir, c)))
-                if label.search(inst)]
+        jobs = [
+            (cycle, fpath)
+            for cycle in cycles
+                for fpath in sorted(os.listdir(os.path.join(args.in_dir, cycle)))
+                    if label.search(fpath)
+        ]
         if not jobs:
-            print(f"{ym}: no matching probing instances. Skipping...")
+            print(f"{ym} {vp_name} has no matching probing instances. Skipping...")
             continue
 
-        print(f"{ym}: {len(jobs)} probing instances over {len(cycles)} cycles")
+        print(f"{ym}: {len(jobs)} probing instances over {len(cycles)} cycles.")
         os.makedirs(out_dir, exist_ok=True)
 
         tmp_path = os.path.join(args.out_dir, f".{vp_name}-{ym}.tmp")
         with gzip.open(tmp_path, "wt", encoding="utf-8") as f:
-            for cycle, inst in jobs:
-                print(f"Querying capture {inst}")
-                p = WartsDumpParser(os.path.join(args.in_dir, cycle), inst)
-                f.write(json.dumps({inst: p.get_data("trace")}) + "\n")
+            for cycle, fpath in jobs:
+                print(f"Querying capture {fpath}")
+                src_path = os.path.join(args.in_dir, cycle)
+                p = WartsDumpParser(src_path, fpath)
+                f.write(json.dumps({fpath: p.get_data("trace")}) + "\n")
 
-        os.replace(tmp_path, out_path)
+        os.replace(tmp_path, fout_path)
 
 if __name__ == "__main__":
     main()
