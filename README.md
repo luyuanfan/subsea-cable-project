@@ -52,19 +52,19 @@ pip install -r requirements.txt
 
 ## Extract Traceroute Data from Ark
 
-> This part should be done on the superserver. 
+> This part should be done on the superserver. All raw data should already be present
+> or must be downloaded in advance. 
 
-Here is a **table** and **map** of [Ark node locations and names](https://www.caida.org/projects/ark/locations/).
+Refer to the **table** and **map** of [Ark node locations, names, and IDs](https://www.caida.org/projects/ark/locations/).
 
 To obtain data from all vantage points from a certain country, run:
 ```bash
-python3 remote/aggregate_raw_measurement.py --country \[country iso code\]
+python3 remote/aggregate_raw_measurement.py --country [country iso code]
 ```
 
-The script also supports additional specifications on airport (via *--airport*) and identifiers (via *--probe_id*, use '-1' to default to the vp with no identifier).
+**The script also supports additional specifications on airport (via *--airport*) and identifiers (via *--probe_id*).**
 
-An airport may have multiple vantage points (VP), with each VP having its own identifier.
-To extract data from a specific VP in a given airport, do:
+For example, an airport may have multiple vantage points (VP), each having its own identifier. To extract data from a specific VP in a given airport, do: 
 ```bash
 python3 remote/aggregate_raw_measurement.py --country fr --airport cdg --probe_id 1
 python3 remote/aggregate_raw_measurement.py --country fr --airport cdg --probe_id 3
@@ -79,34 +79,37 @@ If not airport and probe num is specified, the data extraction script will aggre
 
 ## Prepare Data
 
+Now, copy all the data you just got into `data/buf`.
+
 For a specific incident of interest, put all aggregated vp of interest in the same folder and run: 
+
 ```bash
-python3 prepare_metadata_pipeline.py --root_dir \[the root directory for data\] --data_dir \[directory name for raw data\]  --stats_dir \[directory used to place all outputs stats files\]
+python3 prepare_metadata_pipeline.py --root_dir [root_dir] --data_dir [raw_data_dir_name]  --stats_dir [output_dir_name]
 ```
 
-For example, to study the massive red sea outage, we would want vantage points *ke, za, gh, cdg-fr*. We will format the data directory as:
+For example, to study the massive red sea outage, we would want vantage points *ke, za, gh, fr-cdg*. We will format the data directory as:
 ```
 -> data/
-   -> example-buf/
+   -> buf/
       -> ke/
       -> za/
       -> gh/
-      -> cdg-fr/
+      -> fr-cdg/
 ```
 
 Then to obtain all pre-computed statistical data, run:
 ```bash
-python3 prepare_metadata_pipeline.py --root_dir data --data_dir example-buf  --stats_dir redsea-stats
+python3 prepare_metadata_pipeline.py --root_dir data --data_dir buf  --stats_dir redsea-stats
 ```
 
-After the scripts completes, the buf directory will remain unchanged and you will see additional directories now inside the stats_dir:
+After the scripts completes, the buf directory will remain unchanged and you will see additional directories under `stats_dir`:
 ```
 -> data/
    -> buf/ [unchanged]
       -> ke/
       -> za/
       -> gh/
-      -> cdg-fr/
+      -> fr-cdg/
 
    -> redsea-stats/
       --> probe-filter/
@@ -115,6 +118,7 @@ After the scripts completes, the buf directory will remain unchanged and you wil
       --> asn-dist/
       --> prelim/
 ```
+
 These new statistics data can be used to further processing or visualizations. 
 
 ## Visualize Data
@@ -131,7 +135,7 @@ Also, to specify which vantage points of interest, add **cn_specs.txt** inside t
 ke
 za
 gh
-cdg-fr
+fr-cdg
 ```
 
 To start the port, run: 

@@ -106,11 +106,11 @@ def main():
 
                 for label, descpt, module, out_flag, out_tmpl, extras in STEPS:
                     out_path = f'{stats_dir}/{out_tmpl.format(tag=tag)}'
-                    if os.path.exists(out_path):
-                        print(f'Completed step {label}, {descpt} from {vp} to {dst_iso}. Skipping...')
-                        continue
-                    print(f'Step {label}: {descpt} from {vp} to {dst_iso}')
-                    run_step(label, module, '--in_path', probe_path, out_flag, out_path, *extras)
+                    if not os.path.exists(out_path):
+                        run_step(label, module, '--in_path', probe_path, out_flag, out_path, *extras)
+                    print(f'Completed step {label}, {descpt} from {vp} to {dst_iso}. Skipping...')
+
+    print("All done in prepare_metadata_pipeline")
 
 if __name__ == '__main__':
     main()
