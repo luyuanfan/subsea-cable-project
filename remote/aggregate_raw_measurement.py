@@ -49,7 +49,7 @@ def build_vp_name(country, airport, probe_num):
     """
     Build output filename based on (country, airport, probe_num) spec.
     ('gh') -> 'gh' 
-    ('de', 'muc', -1) -> 'de-muc--1'
+    ('de', 'muc') -> 'de-muc'
     ('fr', 'cdg', 3) -> 'fr-cdg-3'
     """
     parts = [country]
@@ -74,7 +74,7 @@ def build_regex_label(country, airport, probe_num):
     if not airport:
         return re.compile(rf"{country}\.team-probing")
     else:
-        if (not probe_num) or (probe_num == -1):
+        if not probe_num:
             return re.compile(rf"{airport}\d*-{country}\.team-probing")
         else:
             return re.compile(rf"{airport}{probe_num}-{country}\.team-probing")
@@ -87,7 +87,7 @@ def sort_cycle_by_ym(data_dir, start, end):
         (202401) -> [20240101, 20240115, 20240131]
         (202411) -> [20241101, 20241115]
     }
-    Key YYYYMM ascends chronologically, 
+    Key YYYYMM ascends chronologically. 
     """
     cycle_names = [
         n for n in os.listdir(data_dir)
@@ -105,9 +105,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--in_dir", type=str, default=ARK_DIR)
     parser.add_argument("--out_dir", type=str, default="data/aggre-data")
-    parser.add_argument("--country_spec", type=str, required=True)
-    parser.add_argument("--airport_spec", type=str, default=None)
-    parser.add_argument("--probe_num_spec", type=int, default=None)
+    parser.add_argument("--country", type=str, required=True)
+    parser.add_argument("--airport", type=str, default=None)
+    parser.add_argument("--probe_id", type=int, default=None)
     parser.add_argument("--start_time", type=str, default="202401")
     parser.add_argument("--end_time", type=str, default="202412")
     parser.add_argument("--threshold", type=int, default=15)
@@ -116,12 +116,12 @@ def main():
     if not os.path.exists(args.in_dir):
         logger.debug(f"Input directory: [{args.in_dir}] does not exist.")
         sys.exit(1)
-    if args.probe_num_spec and not args.airport_spec:
+    if args.probe_id and not args.airport:
         logger.debug(f"Airport specified but no probe number provided. Exiting...")
         sys.exit(1)
 
-    label = build_regex_label(args.country_spec, args.airport_spec, args.probe_num_spec)
-    vp_name = build_vp_name(args.country_spec, args.airport_spec, args.probe_num_spec)
+    label = build_regex_label(args.country, args.airport, args.probe_id)
+    vp_name = build_vp_name(args.country, args.airport, args.probe_id)
     out_dir = os.path.join(args.out_dir, vp_name)
 
     for ym, cycles in sort_cycle_by_ym(args.in_dir, args.start_time, args.end_time).items():
@@ -156,6 +156,8 @@ def main():
                 f.write(json.dumps({fpath: p.get_data("trace")}) + "\n")
 
         os.replace(tmp_path, fout_path)
+
+    print("All done in aggregate_raw_measurement")
 
 if __name__ == "__main__":
     main()
