@@ -8,4 +8,5 @@ images/*
 # !data/GeoLite2-City.mmdb
 # !data/itdk_formatted.mmdb
 # !data/topology/ark/data/team-probing/list-7.allpref24/team-1/daily/2024
-__pycache__
+**/__pycache__/
+nohup.out
