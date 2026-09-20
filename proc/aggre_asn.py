@@ -1,8 +1,20 @@
-import gzip, argparse, json, re, pandas, os
+"""
+This program is never used.
+
+It annotates an ASN with its geolocation using MaxMind DB. 
+"""
+import re
+import os
+import gzip
+import json
+import argparse
+
 from tqdm import tqdm
 import maxminddb as mmdb
 import pandas as pd
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 def is_private(ip_addr : str) -> bool:
     ip_addr_arr = ip_addr.split('.')
@@ -10,6 +22,7 @@ def is_private(ip_addr : str) -> bool:
     if (sec1 == 10 or (sec1 == 172 and (sec2 >= 16 and sec2 <= 31)) or (sec1 == 192 and sec2 == 168)):
         return True
     return False
+
 
 def ipinfo_geoloc_w_asn(data, geo_reader, asn_reader):
     ret = []
@@ -48,6 +61,7 @@ def ipinfo_geoloc_w_asn(data, geo_reader, asn_reader):
     
     return asn_counter
 
+
 def aggregate_asn_stats(item, geo_reader, asn_reader):
     if item.get('stop-reason', 'unknown') != 'completed':
         return (None, {})
@@ -56,7 +70,8 @@ def aggregate_asn_stats(item, geo_reader, asn_reader):
         return (None, {})
     ret = ipinfo_geoloc_w_asn(item, geo_reader, asn_reader)
     return (data['country']['iso_code'], ret)
- 
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True)

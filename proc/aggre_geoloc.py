@@ -1,8 +1,16 @@
-import gzip, argparse, json, re, pandas
-from tqdm import tqdm
-import maxminddb as mmdb
+"""
+This program maps IP addresses to their geolocations (City, Country)
+using the IPinfo Lite dataset. 
+"""
+import gzip
+import json
+import argparse
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from tqdm import tqdm
+import maxminddb as mmdb
+
 
 def is_private(ip_addr : str) -> bool:
     # private ips include:
@@ -14,6 +22,7 @@ def is_private(ip_addr : str) -> bool:
     if (sec1 == 10 or (sec1 == 172 and (sec2 >= 16 and sec2 <= 31)) or (sec1 == 192 and sec2 == 168)):
         return True
     return False
+
 
 def get_city_from_ip(item: dict, country_spec: set[str], reader) -> tuple[str, dict] | None:
     ip_address = item['dst-ip']
@@ -41,7 +50,7 @@ def get_city_from_ip(item: dict, country_spec: set[str], reader) -> tuple[str, d
             ip_geoloc = res['country']
             asn_name = res.get('as_name', res.get('asn', None))
             if not prev_country:
-               prev_country = ip_geoloc
+                prev_country = ip_geoloc
             elif prev_country != ip_geoloc:
                 crosscn_links.add(f'{prev_ip}->{ip_addr}')
                 if prev_asn:
@@ -49,7 +58,7 @@ def get_city_from_ip(item: dict, country_spec: set[str], reader) -> tuple[str, d
                 if asn_name:
                     crosscn_asns.add(asn_name)
             prev_ip, prev_country, prev_asn = ip_addr, ip_geoloc, asn_name
-     
+
         return (cn, item, list(crosscn_links), list(crosscn_asns))
     except Exception as e:
         print(f"An error occurred: {e}")

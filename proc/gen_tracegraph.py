@@ -1,6 +1,18 @@
+"""
+This program (given pre-filtered files for the queried source and destination locations):
+(1) Read one {month}_{vp}2{dst}.jsonl.gz file.
+(2) Turns file into one directed graph per day, where nodes are public router IPs and edges link consecutive hops.
+"""
+import argparse
+import gzip
+import json
+import re
+import os
+import ipaddress
+
 import networkx as nx
-import argparse, gzip, json, re, os, ipaddress
 from tqdm import tqdm
+
 
 def is_private(ip_addr : str) -> bool:
     ip_addr_arr = ip_addr.split('.')
@@ -8,6 +20,7 @@ def is_private(ip_addr : str) -> bool:
     if (sec1 == 10 or (sec1 == 172 and (sec2 >= 16 and sec2 <= 31)) or (sec1 == 192 and sec2 == 168)):
         return True
     return False
+
 
 def extract_path(data : dict[any]) -> list[str]:
     ret = []
@@ -17,6 +30,7 @@ def extract_path(data : dict[any]) -> list[str]:
 
     ip_addrs = [ip_addr for ip_addr in ret if not is_private(ip_addr)]
     return ip_addrs
+
 
 def process_current_node_graph(G, file_prefix, label):
     node_transit_tuple = [(node, G.nodes[node]['transit'], list(G.nodes[node]['asns'])) for node in G.nodes]
@@ -31,11 +45,13 @@ def process_current_node_graph(G, file_prefix, label):
             G.edges[edge]['asns'] = ';; '.join(list(G.edges[edge]['asns']))
         nx.write_graphml(G, f'{args.out_dir}/{label}.graphml')
 
+
 def process_current_edge_graph(G, file_prefix, label):
     edge_weight_tuple = [(edge, G.edges[edge]['weight'], list(G.edges[edge]['asns'])) for edge in G.edges()]
     if args.out_format == 'json':
         transit_edge_with_weights = [{'node': f'{edge[0]}->{edge[1]}', 'count': weight, 'asns': asns} for (edge, weight, asns) in edge_weight_tuple]
         json_dict[label] = transit_edge_with_weights
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -76,7 +92,7 @@ if __name__ == '__main__':
                     process_current_node_graph(G, args.out_dir, prev_label)
                 elif args.target == 'edge':
                     process_current_edge_graph(G, args.out_dir, prev_label)
-                   
+
                 G.clear()
                 unique_probes.clear()
             prev_label = label

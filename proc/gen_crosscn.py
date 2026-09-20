@@ -1,6 +1,15 @@
+"""
+This program summarizes, for each day, which cross-country ASNs show up in the traces between the given source and destination locations.
+"""
+import re
+import os
+import copy
+import gzip
+import json
+import argparse
+
 import networkx as nx
 import matplotlib.pyplot as plt
-import argparse, gzip, json, re, os, copy
 from tqdm import tqdm
 import maxminddb as mmdb 
 

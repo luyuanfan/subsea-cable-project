@@ -1,4 +1,10 @@
-import argparse, json, re, os, gzip
+"""
+This program computes how much each ASN contributes to the total number of traces. 
+"""
+import re
+import json
+import gzip
+import argparse
 
 if __name__ == '__main__':
     
