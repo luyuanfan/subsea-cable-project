@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from .utils.generate_series import parse_hopdata, parse_iplink
-from .utils.iplink_vis import render_topip
+from clas.utils.generate_series import parse_hopdata, parse_iplink
+from clas.utils.iplink_vis import render_topip
 
 def L_fn(theta, s_n, n, sigma):
     return theta * s_n - (n * sigma ** 2 * theta ** 2) / 2 # log-likelihood difference, measures how much more likely the data is under the alternate hypothesis (mean = θ) compared to the null (mean = 0)

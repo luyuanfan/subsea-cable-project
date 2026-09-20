@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from .utils.generate_series import parse_hopdata, parse_iplink
-from .utils.iplink_vis import render_topip
+from clas.utils.generate_series import parse_hopdata, parse_iplink
+from clas.utils.iplink_vis import render_topip
 
 def ewma(data_arr, win_size, lam_factor=0.2, control_limit=3, mu_0=None, dynamic=True):
     

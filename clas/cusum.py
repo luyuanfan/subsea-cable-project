@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from .utils.generate_series import parse_hopdata, parse_iplink
-from .utils.iplink_vis import render_topip
+from clas.utils.generate_series import parse_hopdata, parse_iplink
+from clas.utils.iplink_vis import render_topip
 
 def estimate_params(window, d_factor=0.5, h_factor=2.0):
     mu_0, std = np.mean(window), np.std(window)

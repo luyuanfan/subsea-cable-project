@@ -26,9 +26,9 @@ import json
 import logging
 from collections import defaultdict
 
-from parser import WartsDumpParser
+from config import ARK_DIR, ARK_BUF_DIR, START_TIME, END_TIME
+from remote.parser import WartsDumpParser
 
-ARK_DIR = "/data/topology/ark/data/team-probing/list-7.allpref24/team-1/daily/2024"
 
 _DATE = re.compile(r"\d{8}")
 
@@ -102,19 +102,20 @@ def sort_cycle_by_ym(data_dir, start, end):
     
 
 def main():
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_dir", type=str, default=ARK_DIR)
-    parser.add_argument("--out_dir", type=str, default="data/aggre-data")
+    parser.add_argument("--input_dir", type=str, default=ARK_DIR)
+    parser.add_argument("--output_dir", type=str, default=ARK_BUF_DIR)
     parser.add_argument("--country", type=str, required=True)
     parser.add_argument("--airport", type=str, default=None)
     parser.add_argument("--probe_id", type=int, default=None)
-    parser.add_argument("--start_time", type=str, default="202401")
-    parser.add_argument("--end_time", type=str, default="202412")
+    parser.add_argument("--start_time", type=str, default=START_TIME)
+    parser.add_argument("--end_time", type=str, default=END_TIME)
     parser.add_argument("--threshold", type=int, default=15)
     args = parser.parse_args()
 
-    if not os.path.exists(args.in_dir):
-        logger.debug(f"Input directory: [{args.in_dir}] does not exist.")
+    if not os.path.exists(args.input_dir):
+        logger.debug(f"Input directory [{args.input_dir}] does not exist. Exiting...")
         sys.exit(1)
     if args.probe_id and not args.airport:
         logger.debug(f"Airport specified but no probe number provided. Exiting...")
@@ -122,14 +123,14 @@ def main():
 
     label = build_regex_label(args.country, args.airport, args.probe_id)
     vp_name = build_vp_name(args.country, args.airport, args.probe_id)
-    out_dir = os.path.join(args.out_dir, vp_name)
+    output_dir = os.path.join(args.output_dir, vp_name)
 
-    for ym, cycles in sort_cycle_by_ym(args.in_dir, args.start_time, args.end_time).items():
+    for ym, cycles in sort_cycle_by_ym(args.input_dir, args.start_time, args.end_time).items():
         if len(cycles) < args.threshold:
             print(f"{ym} {vp_name} has only {len(cycles)} cycles (minimum {args.threshold}. Skipping...")
             continue
 
-        fout_path = os.path.join(out_dir, f"{ym}.jsonl.gz")
+        fout_path = os.path.join(output_dir, f"{ym}.jsonl.gz")
         if os.path.exists(fout_path):
             print(f"{fout_path} already exists. Skipping...")
             continue
@@ -137,7 +138,7 @@ def main():
         jobs = [
             (cycle, fpath)
             for cycle in cycles
-                for fpath in sorted(os.listdir(os.path.join(args.in_dir, cycle)))
+                for fpath in sorted(os.listdir(os.path.join(args.input_dir, cycle)))
                     if label.search(fpath)
         ]
         if not jobs:
@@ -145,13 +146,13 @@ def main():
             continue
 
         print(f"{ym}: {len(jobs)} probing instances over {len(cycles)} cycles.")
-        os.makedirs(out_dir, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
 
-        tmp_path = os.path.join(args.out_dir, f".{vp_name}-{ym}.tmp")
+        tmp_path = os.path.join(args.output_dir, f".{vp_name}-{ym}.tmp")
         with gzip.open(tmp_path, "wt", encoding="utf-8") as f:
             for cycle, fpath in jobs:
                 print(f"Querying capture {fpath}")
-                src_path = os.path.join(args.in_dir, cycle)
+                src_path = os.path.join(args.input_dir, cycle)
                 p = WartsDumpParser(src_path, fpath)
                 f.write(json.dumps({fpath: p.get_data("trace")}) + "\n")
 

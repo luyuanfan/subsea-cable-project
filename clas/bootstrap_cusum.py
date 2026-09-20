@@ -2,8 +2,8 @@ import os, random
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from .utils.generate_series import parse_hopdata, parse_iplink
-from .utils.iplink_vis import render_topip
+from clas.utils.generate_series import parse_hopdata, parse_iplink
+from clas.utils.iplink_vis import render_topip
 
 def calculate_cusum(dist_arr, original_inst=False, top_k=5):
     x_avg = np.mean(dist_arr)
@@ -54,7 +54,7 @@ def bootstrap_cusum_processor(raw_data, subject='hop number', aggre=False, spec=
         ax.set_xticks(dates)
         ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d'))
         plt.setp(ax.get_xticklabels(), rotation=90, ha='right')
- 
+
     ax.set_xlabel('time')
     ax.set_ylabel(subject)
     

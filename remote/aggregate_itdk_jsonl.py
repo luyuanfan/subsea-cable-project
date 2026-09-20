@@ -1,13 +1,15 @@
-import os, json, gzip, threading, time
-import pandas as pd
-from tqdm import tqdm
-
-# multuthreading
+import os
+import json
+import gzip
+import threading
+import time
 from queue import Queue
 
-# mmdb
+import pandas as pd
+from tqdm import tqdm
 from netaddr import IPSet
 from mmdb_writer import MMDBWriter
+
 
 MAPPINGS = {
     'IP Address' : 'ip',
@@ -52,7 +54,7 @@ def parse_worker():
         try:
             j = json.loads(line)
             insert_queue.put(process_line(j))
- 
+
         except Exception as e:
             print(f'[PARSER ERROR] {e}')
         finally:

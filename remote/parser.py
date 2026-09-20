@@ -1,10 +1,14 @@
 import os
 from datetime import datetime
+
 from scamper import ScamperFile, ScamperInst, ScamperTrace, ScamperTraceHop, ScamperPing
-from errors import unimplemented_error, parse_error
+
+from remote.errors import unimplemented_error, parse_error
+
 
 STD_TIME_FORMAT = "%H:%M:%S.%f"
 STD_ZERO_TIME = datetime.strptime("00:00:00.000000", STD_TIME_FORMAT)
+
 
 class WartsDumpParser:
 
