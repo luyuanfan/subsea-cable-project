@@ -3,10 +3,7 @@ data/*
 images/*
 !data/iso-3166-countries-with-regional-codes.csv
 !data/ipinfo_lite.mmdb
-# !data/GeoLite2-Country.mmdb
-# !data/GeoLite2-ASN.mmdb
-# !data/GeoLite2-City.mmdb
-# !data/itdk_formatted.mmdb
-# !data/topology/ark/data/team-probing/list-7.allpref24/team-1/daily/2024
 **/__pycache__/
 nohup.out
+projects/*
+!projects/example_project/
