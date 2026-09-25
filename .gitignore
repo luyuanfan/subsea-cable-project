@@ -4,9 +4,11 @@ images/*
 !data/iso-3166-countries-with-regional-codes.csv
 !data/ipinfo_lite.mmdb
 **/__pycache__/
-**/buffer/
-**/stats/
 nohup.out
 configs/*
+**/buffer/
+**/stats/
+!configs/__init__.py
+!configs/validate_project_config.py
 !configs/global_constants.py
 !configs/example_project/
