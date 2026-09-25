@@ -8,10 +8,12 @@ import os
 import sys
 import argparse
 import subprocess
+import importlib.util
 
 import pandas as pd
 
-from config import ROOT_DIR, ARK_BUF_DIR, STATS_DIR, ISO_FPATH
+from configs.global_constants import ROOT_DIR, ISO_FPATH
+from configs.validate_project_config import read_validate_config
 
 
 SUBDIRS = ["probe-filter", "outputs", "graphs", "asn-dist", "prelim"]
@@ -39,12 +41,13 @@ def run_step(label, module, *args):
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input_dir", type=str, default=ARK_BUF_DIR)
-    parser.add_argument("--output_dir", type=str, default=STATS_DIR)
+    parser.add_argument("--config", type=str, required=True)
     args = parser.parse_args()
 
-    input_dir = f"{args.input_dir}"
-    output_dir = f"{args.output_dir}"
+    cfg = read_validate_config(args.config)
+    input_dir = cfg.BUFFER_DIR
+    output_dir = cfg.STATS_DIR
+
     os.makedirs(output_dir, exist_ok=True)
     for sd in SUBDIRS:
         os.makedirs(f"{output_dir}/{sd}", exist_ok=True)
