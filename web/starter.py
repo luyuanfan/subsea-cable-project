@@ -7,7 +7,7 @@ from components.prelim_comp import render_prelim_realtime
 from components.heatmap_comp import render_heatmap_realtime
 from components.graphvis_comp import render_graphvis_realtime
 from utils.utils import define_iso, toggle_zoom
-from utils.constants import ROOT_DIR, ISO_DB
+from utils.constants import ISO_FPATH
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if PROJECT_ROOT not in sys.path:
@@ -22,7 +22,7 @@ if 'img_idx' not in st.session_state:
     st.session_state['img_idx'] = 0
 if 'page_config' not in st.session_state:
     st.session_state['page_config'] = 'centered'
-define_iso(f'{ROOT_DIR}/{ISO_DB}')
+define_iso(ISO_FPATH)
 
 st.set_page_config(layout=st.session_state.page_config)
 st.button(('zoom in' if st.session_state.page_config == 'centered' else 'zoom out'),

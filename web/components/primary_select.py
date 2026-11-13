@@ -1,12 +1,15 @@
 import streamlit as st
-from utils.constants import STATS_ROOT_DIR, CN_SPEC
+from utils.constants import VP_NAMES, START_TIME, END_TIME
 from utils.utils import reset_page
-import os, datetime
+import datetime, calendar
+
+def ym_to_date(ym, last_day=False):
+    year, month = int(ym[:4]), int(ym[4:6])
+    day = calendar.monthrange(year, month)[1] if last_day else 1
+    return datetime.date(year, month, day)
 
 def render_primary_realtime():
-    with open(f'{STATS_ROOT_DIR}/{CN_SPEC}', 'r') as f:
-        dirs = f.read().split('\n')
-    dirs = sorted(dirs)
+    dirs = sorted(VP_NAMES)
     isos = [dir_item.split('-')[0] for dir_item in dirs]
     iso_specs = ['-'.join(dir_item.split('-')[1:]) if len(dir_item.split('-')) > 1 else '' for dir_item in dirs]
     src_names = [f"{st.session_state.iso2cn[iso]}[{iso_spec}]|{dir_item}" for iso, iso_spec, dir_item in zip(isos, iso_specs, dirs) if st.session_state.iso2cn.get(iso, None)]
@@ -29,7 +32,7 @@ def render_primary_realtime():
                 placeholder='select a destination', on_change=reset_page)
     
         if select_cat != 'IP Hop Connectivity Graph':
-            select_start = st.date_input('statistics start time', datetime.date(2024, 11, 1))
-            select_end = st.date_input('statistics end time', datetime.date(2024, 12, 31))
+            select_start = st.date_input('statistics start time', ym_to_date(START_TIME))
+            select_end = st.date_input('statistics end time', ym_to_date(END_TIME, last_day=True))
 
     return select_cat, select_src, select_dst, select_start, select_end
